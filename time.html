@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Таймер для ЕКР</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 16px;
+      min-height: 100vh;
+      transition: background-color 0.2s, color 0.2s;
+      touch-action: manipulation;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      transition: background 0.2s, border 0.2s;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      border-left: 5px solid #3b82f6;
+      padding-left: 14px;
+    }
+    .section-header h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Часы */
+    .time-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .datetime-box {
+      background: #eef2ff;
+      padding: 16px 28px;
+      border-radius: 60px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-align: center;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .contrast-btn {
+      background: #1e293b;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.15s;
+    }
+    .contrast-btn:active { transform: scale(0.96); }
+
+    /* Таймер — компактнее */
+    .timer-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .timer-card {
+      flex: 1;
+      background: #f8fafc;
+      border-radius: 24px;
+      padding: 16px 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .timer-card label {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      color: #334155;
+      font-size: 0.85rem;
+    }
+    .timer-card input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1.3rem;
+      font-family: monospace;
+      border: 2px solid #cbd5e1;
+      border-radius: 28px;
+      background: white;
+      outline: none;
+    }
+    .timer-card input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+    .end-time-display {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: monospace;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 28px;
+      border: 2px solid #cbd5e1;
+      text-align: center;
+      letter-spacing: 1px;
+      color: #0f172a;
+    }
+    .timer-controls {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .timer-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.15s;
+      min-height: 48px;
+    }
+    .timer-btn:active { transform: scale(0.96); }
+    .pause-btn { background: #eab308; }
+    .stop-btn { background: #ef4444; }
+
+    .timer-display {
+      background: #0f172a;
+      color: #facc15;
+      border-radius: 56px;
+      padding: 14px 24px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 2.4rem;
+      font-weight: bold;
+      letter-spacing: 4px;
+      margin-top: 8px;
+    }
+
+    /* Блоки заметок — компактнее */
+    .blocks-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .add-block-btn {
+      background: #10b981;
+      border: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 52px;
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.1s;
+    }
+    .add-block-btn:active { transform: rotate(90deg); }
+
+    .add-form {
+      background: #f8fafc;
+      border-radius: 32px;
+      padding: 18px;
+      margin-bottom: 24px;
+      display: none;
+      grid-template-columns: 1fr 1fr 0.6fr auto;
+      gap: 16px;
+      align-items: end;
+      border: 1px solid #e2e8f0;
+    }
+    .add-form.active { display: grid; }
+    .add-form .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .add-form label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #475569;
+    }
+    .add-form input {
+      padding: 10px 12px;
+      border-radius: 24px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.9rem;
+      background: white;
+    }
+    .create-block-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 40px;
+      font-weight: 700;
+      cursor: pointer;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .blocks-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .record-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 14px 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .record-content {
+      flex: 1;
+      word-break: break-word;
+    }
+    .record-title {
+      font-weight: 800;
+      color: #0f3b5c;
+      margin-bottom: 4px;
+    }
+    .record-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      min-height: 40px;
+      color: #334155;
+    }
+    .icon-btn:active { background: #e2e8f0; }
+    .delete-btn { color: #dc2626; }
+
+    .empty-placeholder {
+      padding: 32px 16px;
+      text-align: center;
+      background: #f8fafc;
+      border-radius: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.95rem;
+    }
+
+    /* Модальное окно */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      max-width: 460px;
+      width: 90%;
+      border-radius: 48px;
+      padding: 28px 24px;
+    }
+    .modal-content h3 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-field { margin-bottom: 18px; }
+    .modal-field label {
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .modal-field input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 32px;
+      border: 1px solid #cbd5e1;
+      font-size: 1rem;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .modal-buttons button {
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Полноэкранное уведомление — белый секундомер */
+    .fullscreen-notify {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.96);
+      backdrop-filter: blur(12px);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .notify-content {
+      text-align: center;
+      background: #1a1a2e;
+      padding: 32px 48px;
+      border-radius: 64px;
+      border: 3px solid #ffaa44;
+      box-shadow: 0 0 50px rgba(255, 170, 0, 0.4);
+    }
+    .notify-content h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: #ffcc44;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: center;
+    }
+    .stopwatch-display {
+      font-size: 4rem;
+      font-weight: bold;
+      letter-spacing: 6px;
+      background: #000000;
+      padding: 20px 40px;
+      border-radius: 64px;
+      margin: 20px 0;
+      color: #ffffff; /* белый цвет */
+      font-family: monospace;
+    }
+    .notify-close {
+      margin-top: 30px;
+      background: #ffaa44;
+      border: none;
+      padding: 12px 32px;
+      font-size: 1.3rem;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* КОНТРАСТНЫЙ РЕЖИМ — исправлены стили полей */
+    body.high-contrast {
+      background: #000;
+      color: #ffff00;
+    }
+    body.high-contrast .card {
+      background: #111;
+      border: 2px solid #ffff00;
+    }
+    body.high-contrast .datetime-box {
+      background: #222;
+      color: #ffff66;
+      border: 2px solid #ffcc00;
+    }
+    body.high-contrast .timer-card {
+      background: #1a1a1a;
+      border-color: #ffff66;
+    }
+    body.high-contrast .timer-card label {
+      color: #ffffaa;
+    }
+    body.high-contrast .timer-card input,
+    body.high-contrast .end-time-display {
+      background: #2a2a2a;
+      color: #ffff99;
+      border-color: #ffcc66;
+    }
+    body.high-contrast .timer-display {
+      background: #000;
+      color: #ffff00;
+      border: 2px solid #ffff00;
+    }
+    body.high-contrast .record-card {
+      background: #1a1a1a;
+      border: 1px solid #ffff66;
+    }
+    body.high-contrast .record-title,
+    body.high-contrast .record-data {
+      color: #ffffaa;
+    }
+    body.high-contrast .icon-btn {
+      color: #ffff66;
+    }
+    body.high-contrast .icon-btn:active {
+      background: #333;
+    }
+    body.high-contrast .delete-btn {
+      color: #ff8888;
+    }
+    body.high-contrast .add-form {
+      background: #1e1e1e;
+      border-color: #ffcc00;
+    }
+    body.high-contrast .add-form input,
+    body.high-contrast .modal-field input {
+      background: #2a2a2a;
+      color: #ffff99;
+      border-color: #ffcc66;
+    }
+    body.high-contrast .modal-content {
+      background: #0a0a0a;
+      border: 2px solid #ffff00;
+      color: #ffff99;
+    }
+    body.high-contrast .timer-btn {
+      background: #333;
+      color: #ffff00;
+      border: 1px solid #ffff00;
+    }
+    body.high-contrast .start-btn { background: #0044cc; }
+    body.high-contrast .pause-btn { background: #886600; }
+    body.high-contrast .stop-btn { background: #880000; }
+    body.high-contrast .empty-placeholder {
+      background: #111;
+      color: #ffff99;
+      border: 1px solid #ffff66;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 12px; }
+      .card { padding: 16px; }
+      .datetime-box { font-size: 1.6rem; padding: 10px 16px; }
+      .timer-display { font-size: 1.8rem; }
+      .add-form { grid-template-columns: 1fr; }
+      .timer-row { flex-direction: column; gap: 12px; }
+      .notify-content h1 { font-size: 2rem; }
+      .stopwatch-display { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="time-panel">
+      <div class="datetime-box" id="currentDateTime">--.--.-- / --:--:--.--</div>
+      <button class="contrast-btn" id="contrastToggle"><i data-lucide="contrast"></i> Контрастный режим</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-header">
+      <h2><i data-lucide="timer"></i> Таймер</h2>
+    </div>
+    <div class="timer-row">
+      <div class="timer-card">
+        <label><i data-lucide="hourglass"></i> Длительность (ЧЧ:ММ)</label>
+        <input type="time" id="durationInput" placeholder="01:30" value="00:45" maxlength="5">
+      </div>
+      <div class="timer-card">
+        <label><i data-lucide="clock"></i> Время окончания</label>
+        <div class="end-time-display" id="endTimePreview">--:--:--</div>
+      </div>
+    </div>
+    <div class="timer-controls">
+      <button class="timer-btn start-btn" id="startTimerBtn"><i data-lucide="play"></i> Старт</button>
+      <button class="timer-btn pause-btn" id="pauseTimerBtn"><i data-lucide="pause"></i> Пауза</button>
+      <button class="timer-btn stop-btn" id="stopTimerBtn"><i data-lucide="square"></i> Стоп</button>
+    </div>
+    <div class="timer-display" id="timerDisplay">00:00:00</div>
+  </div>
+
+  <div class="card">
+    <div class="blocks-header">
+      <div class="section-header" style="border-left-color: #10b981; margin-bottom: 0;">
+        <h2><i data-lucide="notebook-pen"></i> Блоки для записи</h2>
+      </div>
+      <button class="add-block-btn" id="addBlockBtn"><i data-lucide="plus"></i></button>
+    </div>
+    <div id="addForm" class="add-form">
+      <div class="field-group"><label><i data-lucide="heading"></i> Название поля</label><input type="text" id="newFieldName" placeholder="Загаловок"></div>
+      <div class="field-group"><label><i data-lucide="text"></i> Данные поля</label><input type="text" id="newFieldData" placeholder="Текст / правило"></div>
+      <div class="field-group"><label><i data-lucide="type"></i> Размер текста</label><input type="number" id="newFontSize" placeholder="16" value="18"></div>
+      <button class="create-block-btn" id="confirmCreateBtn"><i data-lucide="plus-circle"></i> Создать</button>
+    </div>
+    <div id="blocksContainer" class="blocks-grid"></div>
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <h3><i data-lucide="pencil"></i> Редактировать блок</h3>
+    <div class="modal-field"><label>Имя поля</label><input type="text" id="editFieldName"></div>
+    <div class="modal-field"><label>Данные поля</label><input type="text" id="editFieldData"></div>
+    <div class="modal-field"><label>Размер текста</label><input type="number" id="editFontSize"></div>
+    <div class="modal-buttons"><button class="cancel-modal" id="closeModalBtn"><i data-lucide="x"></i> Отмена</button><button class="save-modal" id="saveEditBtn"><i data-lucide="save"></i> Сохранить</button></div>
+  </div>
+</div>
+
+<script>
+  // ---------- СОСТОЯНИЕ ----------
+  let blocks = [];
+  let timerInterval = null;
+  let timerEndTime = null;
+  let remainingMs = 0;
+  let isRunning = false;
+
+  // DOM
+  const dateTimeEl = document.getElementById('currentDateTime');
+  const durationInput = document.getElementById('durationInput');
+  const endTimePreviewDiv = document.getElementById('endTimePreview');
+  const startBtn = document.getElementById('startTimerBtn');
+  const pauseBtn = document.getElementById('pauseTimerBtn');
+  const stopBtn = document.getElementById('stopTimerBtn');
+  const timerDisplaySpan = document.getElementById('timerDisplay');
+  const addBlockBtn = document.getElementById('addBlockBtn');
+  const addForm = document.getElementById('addForm');
+  const confirmCreateBtn = document.getElementById('confirmCreateBtn');
+  const blocksContainer = document.getElementById('blocksContainer');
+  const modal = document.getElementById('editModal');
+  const editFieldName = document.getElementById('editFieldName');
+  const editFieldData = document.getElementById('editFieldData');
+  const editFontSize = document.getElementById('editFontSize');
+  const saveEditBtn = document.getElementById('saveEditBtn');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const contrastToggle = document.getElementById('contrastToggle');
+  const newFieldName = document.getElementById('newFieldName');
+  const newFieldData = document.getElementById('newFieldData');
+  const newFontSize = document.getElementById('newFontSize');
+
+  // Форматирование времени
+  function formatTimeFromMs(ms) {
+    if (ms <= 0) return "00:00:00";
+    const totalSec = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function formatTimeInput(value) {
+    let digits = value.replace(/\D/g, '').slice(0, 4);
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+  }
+
+  durationInput.addEventListener('input', (e) => {
+    e.target.value = formatTimeInput(e.target.value);
+    updateEndTimePreview();
+  });
+
+  function updateEndTimePreview() {
+    const durStr = durationInput.value.trim();
+    const regex = /^([0-9]{1,2}):([0-5][0-9])$/;
+    if (!regex.test(durStr)) {
+      endTimePreviewDiv.innerText = '--:--:--';
+      return;
+    }
+    const [, h, m] = durStr.match(regex);
+    const durationMs = (parseInt(h,10) * 3600 + parseInt(m,10) * 60) * 1000;
+    if (durationMs <= 0) {
+      endTimePreviewDiv.innerText = '--:--:--';
+      return;
+    }
+    const endDate = new Date(Date.now() + durationMs);
+    endTimePreviewDiv.innerText = `${String(endDate.getHours()).padStart(2,'0')}:${String(endDate.getMinutes()).padStart(2,'0')}:${String(endDate.getSeconds()).padStart(2,'0')}`;
+  }
+
+  function getDurationFromInput() {
+    const durStr = durationInput.value.trim();
+    const regex = /^([0-9]{1,2}):([0-5][0-9])$/;
+    if (!regex.test(durStr)) return null;
+    const [, h, m] = durStr.match(regex);
+    return (parseInt(h,10) * 3600 + parseInt(m,10) * 60) * 1000;
+  }
+
+  function updateTimerDisplay() {
+    if (isRunning && timerEndTime) {
+      const remaining = timerEndTime - Date.now();
+      if (remaining <= 0) {
+        finishTimer();
+        timerDisplaySpan.innerText = "00:00:00";
+      } else {
+        timerDisplaySpan.innerText = formatTimeFromMs(remaining);
+      }
+    } else if (!isRunning && remainingMs > 0) {
+      timerDisplaySpan.innerText = formatTimeFromMs(remainingMs);
+    } else {
+      timerDisplaySpan.innerText = "00:00:00";
+    }
+  }
+
+  let activeNotify = null;
+  let stopwatchInterval = null;
+  function showFullscreenNotification() {
+    if (activeNotify) return;
+    const startOverdue = Date.now();
+    const notifyDiv = document.createElement('div');
+    notifyDiv.className = 'fullscreen-notify';
+    notifyDiv.innerHTML = `
+      <div class="notify-content">
+        <h1><i data-lucide="alarm-clock"></i> Время вышло!</h1>
+        <div class="stopwatch-display" id="stopwatchDisplay">00:00:00</div>
+        <button class="notify-close" id="closeNotifyBtn"><i data-lucide="x-circle"></i> ЗАКРЫТЬ</button>
+      </div>
+    `;
+    document.body.appendChild(notifyDiv);
+    activeNotify = notifyDiv;
+    lucide.createIcons();
+
+    const updateStopwatch = () => {
+      const elapsed = Date.now() - startOverdue;
+      const totalSec = Math.floor(elapsed / 1000);
+      const hours = Math.floor(totalSec / 3600);
+      const minutes = Math.floor((totalSec % 3600) / 60);
+      const seconds = totalSec % 60;
+      const display = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+      const swEl = notifyDiv.querySelector('#stopwatchDisplay');
+      if (swEl) swEl.innerText = display;
+    };
+    updateStopwatch();
+    stopwatchInterval = setInterval(updateStopwatch, 200);
+
+    notifyDiv.querySelector('#closeNotifyBtn').addEventListener('click', () => {
+      if (stopwatchInterval) clearInterval(stopwatchInterval);
+      notifyDiv.remove();
+      activeNotify = null;
+    });
+  }
+
+  function finishTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    isRunning = false;
+    timerEndTime = null;
+    remainingMs = 0;
+    updateTimerDisplay();
+    showFullscreenNotification();
+  }
+
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    isRunning = false;
+    timerEndTime = null;
+    remainingMs = 0;
+    updateTimerDisplay();
+  }
+
+  function pauseTimer() {
+    if (isRunning && timerEndTime) {
+      remainingMs = Math.max(0, timerEndTime - Date.now());
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      isRunning = false;
+      timerEndTime = null;
+      updateTimerDisplay();
+    }
+  }
+
+  function startTimer() {
+    if (isRunning) return;
+    let newRemaining = remainingMs;
+    if (newRemaining === 0) {
+      const durationMs = getDurationFromInput();
+      if (!durationMs || durationMs <= 0) {
+        alert("Введите корректную длительность в формате ЧЧ:ММ");
+        return;
+      }
+      newRemaining = durationMs;
+      remainingMs = newRemaining;
+    }
+    if (newRemaining <= 0) return;
+    timerEndTime = Date.now() + newRemaining;
+    isRunning = true;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (isRunning && timerEndTime) {
+        if (timerEndTime - Date.now() <= 0) {
+          finishTimer();
+        } else {
+          updateTimerDisplay();
+        }
+      }
+    }, 100);
+    updateTimerDisplay();
+  }
+
+  function updateCurrentTime() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2,'0');
+    const month = String(now.getMonth()+1).padStart(2,'0');
+    const year = String(now.getFullYear()).slice(-2);
+    const hours = String(now.getHours()).padStart(2,'0');
+    const minutes = String(now.getMinutes()).padStart(2,'0');
+    const seconds = String(now.getSeconds()).padStart(2,'0');
+    const ms = String(now.getMilliseconds()).padStart(3,'0');
+    dateTimeEl.innerText = `${day}.${month}.${year} / ${hours}:${minutes}:${seconds}.${ms}`;
+    if (!isRunning) updateEndTimePreview();
+  }
+
+  // ---------- БЛОКИ ЗАМЕТОК ----------
+  function saveBlocks() { localStorage.setItem('teacherBlocks', JSON.stringify(blocks)); }
+  function loadBlocks() {
+    const stored = localStorage.getItem('teacherBlocks');
+    blocks = stored ? JSON.parse(stored) : [];
+    renderBlocks();
+  }
+  function renderBlocks() {
+    if (blocks.length === 0) {
+      blocksContainer.innerHTML = `<div class="empty-placeholder"><i data-lucide="inbox"></i><span>Нет блоков. Нажмите «+», чтобы добавить заметку.</span></div>`;
+      lucide.createIcons();
+      return;
+    }
+    let html = '';
+    blocks.forEach(b => {
+      html += `
+        <div class="record-card" data-id="${b.id}">
+          <div class="record-content">
+            <div class="record-title" style="font-size:${b.fontSize}px;">${escapeHtml(b.name)}</div>
+            <div class="record-data" style="font-size:${b.fontSize}px;">${escapeHtml(b.data)}</div>
+          </div>
+          <div class="record-actions">
+            <button class="icon-btn edit-btn" data-id="${b.id}"><i data-lucide="pencil"></i></button>
+            <button class="icon-btn delete-btn" data-id="${b.id}"><i data-lucide="trash-2"></i></button>
+          </div>
+        </div>
+      `;
+    });
+    blocksContainer.innerHTML = html;
+    lucide.createIcons();
+    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => openEditModal(parseInt(btn.dataset.id))));
+    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteBlock(parseInt(btn.dataset.id))));
+  }
+  function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+  function addBlock(name, data, fontSize) {
+    if (!name.trim()) name = "Запись";
+    blocks.push({ id: Date.now(), name: name.trim(), data: data.trim() || "—", fontSize: parseInt(fontSize)||16 });
+    saveBlocks(); renderBlocks();
+  }
+  function deleteBlock(id) { blocks = blocks.filter(b => b.id !== id); saveBlocks(); renderBlocks(); }
+  function updateBlock(id, name, data, fontSize) {
+    const idx = blocks.findIndex(b => b.id === id);
+    if (idx !== -1) { blocks[idx] = { ...blocks[idx], name: name.trim() || "Блок", data: data.trim() || "—", fontSize: parseInt(fontSize)||16 }; saveBlocks(); renderBlocks(); }
+  }
+  let currentEditId = null;
+  function openEditModal(id) {
+    const b = blocks.find(b => b.id === id);
+    if (!b) return;
+    currentEditId = id;
+    editFieldName.value = b.name;
+    editFieldData.value = b.data;
+    editFontSize.value = b.fontSize;
+    modal.classList.add('active');
+    lucide.createIcons();
+  }
+  function closeModal() { modal.classList.remove('active'); currentEditId = null; }
+
+  // Управление формой добавления — исправлено: клик по плюсу всегда переключает
+  let formVisible = false;
+  addBlockBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (formVisible) {
+      addForm.classList.remove('active');
+      formVisible = false;
+    } else {
+      addForm.classList.add('active');
+      formVisible = true;
+      newFieldName.value = '';
+      newFieldData.value = '';
+      newFontSize.value = '18';
+      lucide.createIcons();
+    }
+  });
+
+  confirmCreateBtn.addEventListener('click', () => {
+    const name = newFieldName.value.trim(), data = newFieldData.value.trim(), size = parseInt(newFontSize.value);
+    if (!name && !data) { alert("Введите название или данные"); return; }
+    addBlock(name || "Заметка", data || " ", size || 16);
+    addForm.classList.remove('active');
+    formVisible = false;
+  });
+
+  function loadContrast() { if (localStorage.getItem('highContrastMode') === 'true') document.body.classList.add('high-contrast'); }
+  contrastToggle.addEventListener('click', () => { document.body.classList.toggle('high-contrast'); localStorage.setItem('highContrastMode', document.body.classList.contains('high-contrast')); });
+
+  // Инициализация
+  setInterval(updateCurrentTime, 10);
+  updateCurrentTime();
+  loadBlocks();
+  loadContrast();
+  startBtn.addEventListener('click', startTimer);
+  pauseBtn.addEventListener('click', pauseTimer);
+  stopBtn.addEventListener('click', stopTimer);
+  saveEditBtn.addEventListener('click', () => { if (currentEditId) { updateBlock(currentEditId, editFieldName.value, editFieldData.value, editFontSize.value); closeModal(); } });
+  closeModalBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('click', (e) => {
+    if (formVisible && !addForm.contains(e.target) && e.target !== addBlockBtn && !addBlockBtn.contains(e.target)) {
+      addForm.classList.remove('active');
+      formVisible = false;
+    }
+  });
+  lucide.createIcons();
+  updateEndTimePreview();
+  if (Notification.permission === 'default') Notification.requestPermission();
+</script>
+</body>
+</html>
